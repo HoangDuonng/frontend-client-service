@@ -1,0 +1,78 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Image from "next/image";
+
+const slides = [
+    {
+        image: "/images/banner/banner-1.webp",
+        caption: "Ẩm thực đường phố Sài Gòn",
+    },
+    {
+        image: "/images/banner/banner-2.webp",
+        caption: "Văn hóa & Lịch sử đặc sắc",
+    },
+    {
+        image: "/images/banner/banner-3.webp",
+        caption: "Sự kiện & Lễ hội quanh năm",
+    },
+];
+
+export default function ExploreBanner() {
+    const [current, setCurrent] = useState(0);
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrent((prev) => (prev + 1) % slides.length);
+        }, 4000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const goToSlide = (idx: number) => setCurrent(idx);
+    const prevSlide = () => setCurrent((prev) => (prev - 1 + slides.length) % slides.length);
+    const nextSlide = () => setCurrent((prev) => (prev + 1) % slides.length);
+
+    return (
+        <section className="h-screen min-h-[500px] max-h-[100vh] pt-24 relative w-full h-[60vw] flex items-center justify-center overflow-hidden rounded-xl shadow mb-12">
+            <Image
+                src={slides[current].image}
+                alt={slides[current].caption}
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                className="object-cover transition-all duration-700"
+                priority
+            />
+            {/* Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
+            {/* Caption */}
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 text-center text-white">
+                <div className="text-xl md:text-2xl font-bold drop-shadow mb-2">{slides[current].caption}</div>
+                <div className="flex gap-2 justify-center mt-2">
+                    {slides.map((_, idx) => (
+                        <button
+                            key={idx}
+                            className={`w-3 h-3 rounded-full ${idx === current ? 'bg-white' : 'bg-white/40'} transition`}
+                            onClick={() => goToSlide(idx)}
+                            aria-label={`Chuyển đến slide ${idx + 1}`}
+                        />
+                    ))}
+                </div>
+            </div>
+            {/* Prev/Next buttons */}
+            <button
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white rounded-full p-2 z-20"
+                onClick={prevSlide}
+                aria-label="Slide trước"
+            >
+                &#8592;
+            </button>
+            <button
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white rounded-full p-2 z-20"
+                onClick={nextSlide}
+                aria-label="Slide sau"
+            >
+                &#8594;
+            </button>
+        </section>
+    );
+} 
