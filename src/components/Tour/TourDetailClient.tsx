@@ -25,7 +25,7 @@ export default function TourDetailClient({
     if (error) return <div className="text-red-500 mb-4">{error}</div>;
     if (!tour) return <Loading />;
 
-    const base = `${env.NEXT_PUBLIC_TOUR_STATIC_BASE_URL}/${tour.storageSubPath.replace(/\\/g, "/")}`;
+    const base = `${env.NEXT_PUBLIC_API_FILE_URL}/static_files/${tour.storageSubPath.replace(/\\/g, "/")}`;
     const xmlUrl = `${base}/tour.xml`;
     const jsUrl = `${base}/tour.js`;
 

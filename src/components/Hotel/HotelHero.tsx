@@ -1,49 +1,89 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Image from 'next/image';
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import { bannerService } from "@/services/bannerService";
+import type { HomeImageBanner } from "@/types/banner";
+
+const FALLBACK_SLIDES: HomeImageBanner[] = [
+    {
+        image: "/images/banner/banner-2.webp",
+        caption: "Khách sạn nổi bật tại Sài Gòn",
+        order: 1,
+    },
+];
 
 export default function HotelHero() {
+    const [slides, setSlides] = useState<HomeImageBanner[]>(FALLBACK_SLIDES);
+    const [current, setCurrent] = useState(0);
+
+    useEffect(() => {
+        bannerService.getHeaderBanner2()
+            .then((data) => {
+                if (Array.isArray(data) && data.length > 0) setSlides(data);
+            })
+            .catch(() => setSlides(FALLBACK_SLIDES));
+    }, []);
+
+    useEffect(() => {
+        if (slides.length <= 1) return;
+        const timer = setInterval(() => {
+            setCurrent((prev) => (prev + 1) % slides.length);
+        }, 4000);
+        return () => clearInterval(timer);
+    }, [slides.length]);
+
+    const goToSlide = (idx: number) => setCurrent(idx);
+    const prevSlide = () => setCurrent((prev) => (prev - 1 + slides.length) % slides.length);
+    const nextSlide = () => setCurrent((prev) => (prev + 1) % slides.length);
+
     return (
-        <section className="relative bg-gradient-to-r from-blue-600 to-blue-800 text-white">
-            {/* Background Image */}
-            <div className="absolute inset-0">
-                <Image
-                    src="/images/hero/hero-1.webp"
-                    alt="Hotel Background"
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    className="object-cover opacity-20"
-                    priority
-                />
-            </div>
-
-            <div className="relative z-10 container mx-auto px-4 py-16">
-                <div className="max-w-4xl mx-auto text-center">
-                    <h1 className="text-4xl md:text-5xl font-bold mt-20">
-                        Tìm & đặt phòng khách sạn giá rẻ chỉ với 3 bước đơn giản!
-                    </h1>
-                    <p className="text-xl md:text-2xl mb-8 opacity-90">
-                        Khám phá ngay những ưu đãi tốt nhất dành cho bạn!
-                    </p>
-
-                    {/* Quick Stats */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
-                            <div className="text-3xl font-bold text-yellow-300">10,000+</div>
-                            <div className="text-sm opacity-80">Khách sạn</div>
-                        </div>
-                        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
-                            <div className="text-3xl font-bold text-yellow-300">50+</div>
-                            <div className="text-sm opacity-80">Thành phố</div>
-                        </div>
-                        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
-                            <div className="text-3xl font-bold text-yellow-300">24/7</div>
-                            <div className="text-sm opacity-80">Hỗ trợ</div>
-                        </div>
-                    </div>
+        <section className="aspect-[16/9] w-full relative flex items-center justify-center overflow-hidden rounded-xl shadow mb-0 pt-24 max-h-[100vh] min-h-[300px]">
+            <Image
+                src={slides[current].image}
+                alt={slides[current].caption}
+                fill
+                sizes="100vw"
+                className="object-cover transition-all duration-700"
+                priority
+            />
+            {/* Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
+            {/* Caption */}
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 z-20 px-12 flex items-center w-full pb-16">
+                <div className="text-4xl md:text-6xl font-extrabold drop-shadow text-white text-left w-full">
+                    Các khách sạn nổi tiếng<br />tại thành phố Hồ Chí Minh
                 </div>
             </div>
+            {/* Prev/Next buttons & dots */}
+            {slides.length > 1 && (
+                <>
+                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex gap-2">
+                        {slides.map((_, idx) => (
+                            <button
+                                key={idx}
+                                className={`w-3 h-3 rounded-full ${idx === current ? 'bg-white' : 'bg-white/40'} transition`}
+                                onClick={() => goToSlide(idx)}
+                                aria-label={`Chuyển đến slide ${idx + 1}`}
+                            />
+                        ))}
+                    </div>
+                    <button
+                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white rounded-full p-2 z-20"
+                        onClick={prevSlide}
+                        aria-label="Slide trước"
+                    >
+                        &#8592;
+                    </button>
+                    <button
+                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white rounded-full p-2 z-20"
+                        onClick={nextSlide}
+                        aria-label="Slide sau"
+                    >
+                        &#8594;
+                    </button>
+                </>
+            )}
         </section>
     );
 } 

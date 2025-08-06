@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import BackToTop from '@/components/layout/backToTop';
@@ -8,51 +8,24 @@ import ChatPopup from '@/components/layout/chatPopup';
 import Link from 'next/link';
 import { FaChevronRight, FaStar, FaMapMarkerAlt, FaWifi, FaUtensils, FaSwimmer, FaCheckCircle } from 'react-icons/fa';
 import HotelSearch from './HotelSearch';
+import { hotelService } from '@/services/hotelService';
+import { Hotel } from '@/types/hotel';
+import Loader from '@/components/loader/page';
 
-const HOTELS = [
-    {
-        slug: 'liberty-central-saigon-riverside',
-        name: 'Liberty Central Saigon Riverside Hotel',
-        address: '17 Tôn Đức Thắng, Quận 1, TP. Hồ Chí Minh',
-        rating: 8.7,
-        reviews: 1483,
-        price: 2300000,
-        image: '/images/banner/banner-1.webp',
-        tags: ['Trung tâm', 'Ăn sáng', 'Hồ bơi', 'Wifi miễn phí'],
-        stars: 4,
-        facilities: ['Wifi', 'Ăn sáng', 'Hồ bơi'],
-        flexible: ['Miễn phí hủy'],
-        descriptionShort: 'Khách sạn Liberty Central Saigon Riverside Hotel là lựa chọn lý tưởng cho chuyến đi của bạn tại 17 Tôn Đức Thắng, Quận 1, TP. Hồ Chí Minh. Tận hưởng các tiện nghi hiện đại, dịch vụ chuyên nghiệp và vị trí thuận tiện.'
-    },
-    {
-        slug: 'hotel-nikko-saigon',
-        name: 'Hotel Nikko Saigon',
-        address: '235 Nguyễn Văn Cừ, Quận 1, TP. Hồ Chí Minh',
-        rating: 9.1,
-        reviews: 2034,
-        price: 3100000,
-        image: '/images/banner/banner-2.webp',
-        tags: ['5 sao', 'Ăn sáng', 'Hồ bơi', 'Wifi miễn phí'],
-        stars: 5,
-        facilities: ['Wifi', 'Ăn sáng', 'Hồ bơi'],
-        flexible: ['Miễn phí hủy', 'Thanh toán tại KS'],
-        descriptionShort: 'Hotel Nikko Saigon là lựa chọn lý tưởng cho chuyến đi của bạn tại 235 Nguyễn Văn Cừ, Quận 1, TP. Hồ Chí Minh. Tận hưởng các tiện nghi hiện đại, dịch vụ chuyên nghiệp và vị trí thuận tiện.'
-    },
-    {
-        slug: 'the-reverie-saigon',
-        name: 'The Reverie Saigon',
-        address: '22-36 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh',
-        rating: 9.5,
-        reviews: 1120,
-        price: 5800000,
-        image: '/images/banner/banner-3.webp',
-        tags: ['Sang trọng', 'Ăn sáng', 'Hồ bơi', 'Wifi miễn phí'],
-        stars: 5,
-        facilities: ['Wifi', 'Ăn sáng', 'Hồ bơi'],
-        flexible: ['Thanh toán tại KS'],
-        descriptionShort: 'The Reverie Saigon là lựa chọn lý tưởng cho chuyến đi của bạn tại 22-36 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh. Tận hưởng các tiện nghi hiện đại, dịch vụ chuyên nghiệp và vị trí thuận tiện.'
-    },
-];
+function slugify(str: string) {
+    return str
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd')
+        .replace(/Đ/g, 'D')
+        .replace(/\s+/g, '-')
+        .toLowerCase();
+}
+
+function getDistrictImage(name: string) {
+    const slug = slugify(name);
+    return `/images/hotel/${slug}.webp`;
+}
 
 const FACILITY_OPTIONS = [
     { label: 'Wifi', icon: <FaWifi /> },
@@ -67,13 +40,25 @@ export default function HotelDestinationClient({ destinationName }: { destinatio
     const [facilityFilter, setFacilityFilter] = useState<string[]>([]);
     const [flexibleFilter, setFlexibleFilter] = useState<string[]>([]);
     const [search, setSearch] = useState('');
+    const [hotels, setHotels] = useState<Hotel[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    // Filtering logic
-    const filteredHotels = HOTELS.filter(hotel => {
-        if (starFilter.length && !starFilter.includes(hotel.stars)) return false;
-        if (facilityFilter.length && !facilityFilter.every(f => hotel.facilities.includes(f))) return false;
-        if (flexibleFilter.length && !flexibleFilter.every(f => hotel.flexible.includes(f))) return false;
-        if (search && !hotel.name.toLowerCase().includes(search.toLowerCase()) && !hotel.address.toLowerCase().includes(search.toLowerCase())) return false;
+    useEffect(() => {
+        hotelService.getHotels()
+            .then(data => setHotels(data))
+            .finally(() => setLoading(false));
+    }, []);
+
+    const districtSlug = slugify(destinationName);
+    console.log('districtSlug:', districtSlug);
+
+    const filteredHotels = hotels.filter(hotel => {
+        const regionParts = hotel.region.split(',').map(part => slugify(part.trim()));
+        console.log('regionParts:', regionParts, 'for hotel:', hotel.displayName);
+        if (!regionParts.some(part => part.includes(districtSlug) || districtSlug.includes(part))) return false;
+        if (starFilter.length && !starFilter.includes(Number(hotel.starRating))) return false;
+        if (facilityFilter.length && !facilityFilter.every(f => hotel.hotelFeatures.includes(f))) return false;
+        if (search && !hotel.displayName.toLowerCase().includes(search.toLowerCase()) && !hotel.region.toLowerCase().includes(search.toLowerCase())) return false;
         return true;
     });
 
@@ -83,7 +68,7 @@ export default function HotelDestinationClient({ destinationName }: { destinatio
             {/* Banner full width */}
             <div className="relative w-screen left-1/2 right-1/2 -translate-x-1/2 h-80 md:h-[420px] mb-0">
                 <img
-                    src="/images/banner/banner-1.webp"
+                    src={getDistrictImage(destinationName)}
                     alt={`Banner ${destinationName}`}
                     className="w-full h-full object-cover"
                 />
@@ -94,10 +79,7 @@ export default function HotelDestinationClient({ destinationName }: { destinatio
             </div>
             {/* Floating search bar */}
             <div className="relative z-10 flex justify-center -mt-20 mb-6">
-                {/* <div className="w-full max-w-3xl"> */}
-                <HotelSearch
-                />
-                {/* </div> */}
+                <HotelSearch />
             </div>
             <main className="container mx-auto px-4 pb-24 flex flex-col md:flex-row gap-8">
                 {/* Sidebar filter */}
@@ -174,47 +156,57 @@ export default function HotelDestinationClient({ destinationName }: { destinatio
                     </div>
                     {/* Hotel list */}
                     <div className="grid grid-cols-1 gap-6">
-                        {filteredHotels.length === 0 && (
+                        {loading && <Loader />}
+                        {!loading && filteredHotels.length === 0 && (
                             <div className="col-span-full text-center text-gray-400 py-12">Không tìm thấy khách sạn phù hợp.</div>
                         )}
-                        {filteredHotels.map((hotel, idx) => (
-                            <div key={idx} className="bg-white rounded-xl shadow p-4 grid grid-cols-[auto,1fr,auto] items-center gap-6">
-                                {/* Ảnh khách sạn */}
-                                <img src={hotel.image} alt={hotel.name} className="w-84 h-56 object-cover rounded-lg self-stretch" />
-                                {/* Thông tin */}
-                                <div className="min-w-0 flex flex-col h-full justify-between">
-                                    <div>
-                                        <h3 className="font-bold text-lg mb-1">{hotel.name}</h3>
-                                        <div className="flex items-center text-sm text-gray-500 mb-0.5">
-                                            <FaMapMarkerAlt className="mr-1" />{hotel.address}
-                                        </div>
-                                        <div className="flex flex-wrap gap-2 mb-1">
-                                            {hotel.tags.map((tag, i) => (
-                                                <span key={i} className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs flex items-center gap-1">
-                                                    <FaCheckCircle className="text-green-400" />{tag}
-                                                </span>
-                                            ))}
-                                        </div>
+                        {!loading && filteredHotels.map((hotel, idx) => {
+                            console.log('Slug truyền vào nút Xem phòng trống:', hotel.slug);
+                            return (
+                                <div key={hotel._id} className="bg-white rounded-xl shadow p-4 grid grid-cols-[auto,1fr,auto] items-center gap-6">
+                                    {/* Ảnh khách sạn */}
+                                    <div className="h-56 w-60 flex items-center justify-center">
+                                        <img
+                                            src={hotel.imageUrl}
+                                            alt={hotel.displayName}
+                                            className="h-full w-full object-cover rounded-lg"
+                                        />
                                     </div>
-                                    {hotel.descriptionShort && (
-                                        <div className="mt-2 text-gray-700 text-left text-base line-clamp-2" title={hotel.descriptionShort}>
-                                            {hotel.descriptionShort}
+                                    {/* Thông tin */}
+                                    <div className="min-w-0 flex flex-col h-full justify-between">
+                                        <div>
+                                            <h3 className="font-bold text-lg mb-1">{hotel.displayName}</h3>
+                                            <div className="flex items-center text-sm text-gray-500 mb-0.5">
+                                                <FaMapMarkerAlt className="mr-1" />{hotel.region}
+                                            </div>
+                                            <div className="flex flex-wrap gap-2 mb-1">
+                                                {hotel.hotelFeatures?.map((tag, i) => (
+                                                    <span key={i} className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs flex items-center gap-1">
+                                                        <FaCheckCircle className="text-green-400" />{tag}
+                                                    </span>
+                                                ))}
+                                            </div>
                                         </div>
-                                    )}
-                                </div>
-                                {/* Giá + nút */}
-                                <div className="flex flex-col items-end justify-end h-full gap-2">
-                                    <div className="text-right">
-                                        <div className="text-gray-400 text-base font-semibold">Giá trung bình</div>
-                                        <div className="text-2xl font-bold text-[#FF5722]">{hotel.price.toLocaleString()} VND</div>
-                                        <div className="text-gray-400 text-base">/phòng/đêm</div>
+                                        {hotel.description && (
+                                            <div className="mt-2 text-gray-700 text-left text-base line-clamp-2" title={hotel.description}>
+                                                {hotel.description}
+                                            </div>
+                                        )}
                                     </div>
-                                    <Link href={`/khach-san/chi-tiet/${hotel.slug}`} legacyBehavior>
-                                        <a className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition duration-300 mt-2">Xem phòng trống</a>
-                                    </Link>
+                                    {/* Giá + nút */}
+                                    <div className="flex flex-col items-end justify-end h-full gap-2">
+                                        <div className="text-right">
+                                            <div className="text-gray-400 text-base font-semibold">Giá trung bình</div>
+                                            <div className="text-2xl font-bold text-[#FF5722]">{Number(hotel.price).toLocaleString()} VND</div>
+                                            <div className="text-gray-400 text-base">/phòng/đêm</div>
+                                        </div>
+                                        <Link href={`/khach-san/chi-tiet/${hotel.slug}`} legacyBehavior>
+                                            <a className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition duration-300 mt-2">Xem phòng trống</a>
+                                        </Link>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                     {/* Section: Tại sao nên đặt phòng */}
                     <div className="mt-12 bg-white rounded-xl shadow p-6">

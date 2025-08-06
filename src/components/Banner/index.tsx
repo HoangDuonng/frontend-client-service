@@ -1,8 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react";
+import { bannerService } from "@/services/bannerService";
+import type { Banner } from "@/types/banner";
 
-const slides = [
+const FALLBACK_SLIDES: Banner[] = [
     {
         title: "Khám phá",
         subtitle: "Thành phố Hồ Chí Minh",
@@ -24,14 +26,25 @@ const slides = [
 ];
 
 export default function Banner() {
+    const [slides, setSlides] = useState<Banner[]>(FALLBACK_SLIDES);
     const [current, setCurrent] = useState(0);
+
+    useEffect(() => {
+        bannerService.getHomeVideoBanner()
+            .then((data) => {
+                if (Array.isArray(data) && data.length > 0) setSlides(data);
+            })
+            .catch(() => {
+                setSlides(FALLBACK_SLIDES);
+            });
+    }, []);
 
     useEffect(() => {
         const timer = setInterval(() => {
             setCurrent((prev) => (prev + 1) % slides.length);
         }, 5000);
         return () => clearInterval(timer);
-    }, []);
+    }, [slides.length]);
 
     return (
         <section className="relative flex items-center justify-center h-screen min-h-[500px] max-h-[100vh] pt-24">

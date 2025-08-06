@@ -3,32 +3,46 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { bannerService } from "@/services/bannerService";
+import type { HomeImageBanner } from "@/types/banner";
 
-const slides = [
+const FALLBACK_SLIDES: HomeImageBanner[] = [
     {
         image: "/images/banner/banner-1.webp",
         caption: "Ẩm thực đường phố Sài Gòn",
+        order: 1,
     },
     {
         image: "/images/banner/banner-2.webp",
         caption: "Văn hóa & Lịch sử đặc sắc",
+        order: 2,
     },
     {
         image: "/images/banner/banner-3.webp",
         caption: "Sự kiện & Lễ hội quanh năm",
+        order: 3,
     },
 ];
 
-export default function HomeSlider({ onSlideClick, slideLinks }: { onSlideClick?: (idx: number) => void, slideLinks?: string[] }) {
+export default function HomeSlider({ onSlideClick }: { onSlideClick?: (idx: number) => void }) {
+    const [slides, setSlides] = useState<HomeImageBanner[]>(FALLBACK_SLIDES);
     const [current, setCurrent] = useState(0);
     const router = useRouter();
+
+    useEffect(() => {
+        bannerService.getHomeImageBanner()
+            .then((data) => {
+                if (Array.isArray(data) && data.length > 0) setSlides(data);
+            })
+            .catch(() => setSlides(FALLBACK_SLIDES));
+    }, []);
 
     useEffect(() => {
         const timer = setInterval(() => {
             setCurrent((prev) => (prev + 1) % slides.length);
         }, 4000);
         return () => clearInterval(timer);
-    }, []);
+    }, [slides.length]);
 
     const goToSlide = (idx: number) => setCurrent(idx);
     const prevSlide = () => setCurrent((prev) => (prev - 1 + slides.length) % slides.length);
@@ -37,8 +51,8 @@ export default function HomeSlider({ onSlideClick, slideLinks }: { onSlideClick?
     const handleClick = () => {
         if (onSlideClick) {
             onSlideClick(current);
-        } else if (slideLinks && slideLinks[current]) {
-            router.push(slideLinks[current]);
+        } else if (slides[current].buttonUrl) {
+            router.push(slides[current].buttonUrl!);
         }
     };
 

@@ -31,7 +31,16 @@ export default function PublicationList() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 {publications.map((pub, idx) => (
                     <div key={idx} className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
-                        <Image src={pub.image} alt={pub.title} width={180} height={120} className="rounded mb-4 object-cover w-full h-[120px]" />
+                        <div className="w-full aspect-[16/9] relative mb-4 rounded overflow-hidden">
+                            <Image
+                                src={pub.image}
+                                alt={pub.title}
+                                fill
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                className="object-cover"
+                                style={{ width: '100%', height: '100%' }}
+                            />
+                        </div>
                         <h3 className="text-lg font-bold mb-2 text-center">{pub.title}</h3>
                         <p className="text-center text-muted-foreground mb-2">{pub.desc}</p>
                     </div>

@@ -1,39 +1,89 @@
 "use client";
 
-import Image from 'next/image';
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import { bannerService } from "@/services/bannerService";
+import type { HomeImageBanner } from "@/types/banner";
+
+const FALLBACK_SLIDES: HomeImageBanner[] = [
+    {
+        image: "/images/banner/banner-3.webp",
+        caption: "Lễ hội & Sự kiện nổi bật tại Sài Gòn",
+        order: 1,
+    },
+];
 
 export default function EventBanner() {
+    const [slides, setSlides] = useState<HomeImageBanner[]>(FALLBACK_SLIDES);
+    const [current, setCurrent] = useState(0);
+
+    useEffect(() => {
+        bannerService.getHeaderBanner3()
+            .then((data) => {
+                if (Array.isArray(data) && data.length > 0) setSlides(data);
+            })
+            .catch(() => setSlides(FALLBACK_SLIDES));
+    }, []);
+
+    useEffect(() => {
+        if (slides.length <= 1) return;
+        const timer = setInterval(() => {
+            setCurrent((prev) => (prev + 1) % slides.length);
+        }, 4000);
+        return () => clearInterval(timer);
+    }, [slides.length]);
+
+    const goToSlide = (idx: number) => setCurrent(idx);
+    const prevSlide = () => setCurrent((prev) => (prev - 1 + slides.length) % slides.length);
+    const nextSlide = () => setCurrent((prev) => (prev + 1) % slides.length);
+
     return (
-        <section className="
-            relative w-full h-screen min-h-[500px] max-h-[100vh]
-            flex items-center justify-center overflow-hidden select-none
-            pt-24
-        ">
-            {/* Ảnh nền */}
+        <section className="aspect-[16/9] w-full relative flex items-center justify-center overflow-hidden rounded-xl shadow mb-12 pt-24 max-h-[100vh] min-h-[300px]">
             <Image
-                src="/images/banner/banner-2.webp"
-                alt="Lễ hội & Sự kiện TP.HCM"
+                src={slides[current].image}
+                alt={slides[current].caption}
                 fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                className="object-cover"
+                sizes="100vw"
+                className="object-cover transition-all duration-700"
                 priority
             />
-            {/* Overlay gradient xanh đậm -> trong suốt */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-blue-900/90 via-blue-900/60 to-transparent z-10" />
-            {/* Nội dung trung tâm */}
-            <div className="absolute inset-0 flex flex-col items-start justify-center z-20 px-4">
-                <button className="mb-6 px-6 py-2 bg-red-600 text-white font-bold rounded-full text-sm shadow-lg hover:bg-red-700 transition">VĂN HÓA & LỊCH SỬ</button>
-                <h1 className="text-3xl md:text-5xl font-extrabold text-white text-left drop-shadow mb-6 leading-tight">
-                    Những địa điểm du lịch ít người biết ở TPHCM<br />đang cần bạn khám phá
-                </h1>
-                {/* Dot chuyển slide (placeholder) */}
-                <div className="flex gap-2 justify-center mt-2">
-                    <span className="w-3 h-3 rounded-full bg-white/80" />
-                    <span className="w-3 h-3 rounded-full bg-white/40" />
-                    <span className="w-3 h-3 rounded-full bg-white/40" />
-                    <span className="w-3 h-3 rounded-full bg-white/40" />
+            {/* Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
+            {/* Caption */}
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-full flex items-center">
+                <div className="text-4xl md:text-6xl font-extrabold drop-shadow text-white text-left w-full px-12">
+                    Lễ hội & Sự kiện nổi bật<br />tại Sài Gòn
                 </div>
             </div>
+            {/* Prev/Next buttons & dots */}
+            {slides.length > 1 && (
+                <>
+                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex gap-2">
+                        {slides.map((_, idx) => (
+                            <button
+                                key={idx}
+                                className={`w-3 h-3 rounded-full ${idx === current ? 'bg-white' : 'bg-white/40'} transition`}
+                                onClick={() => goToSlide(idx)}
+                                aria-label={`Chuyển đến slide ${idx + 1}`}
+                            />
+                        ))}
+                    </div>
+                    <button
+                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white rounded-full p-2 z-20"
+                        onClick={prevSlide}
+                        aria-label="Slide trước"
+                    >
+                        &#8592;
+                    </button>
+                    <button
+                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white rounded-full p-2 z-20"
+                        onClick={nextSlide}
+                        aria-label="Slide sau"
+                    >
+                        &#8594;
+                    </button>
+                </>
+            )}
         </section>
     );
 } 
