@@ -10,6 +10,13 @@ interface Message {
     timestamp: Date;
 }
 
+interface SessionInfo {
+    sessionId: string | null;
+    lastActivity: Date;
+    messageCount: number;
+    wasRefreshed: boolean;
+}
+
 const ChatPopup = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([
@@ -20,10 +27,19 @@ const ChatPopup = () => {
             timestamp: new Date()
         }
     ]);
+    const [showRefreshMessage, setShowRefreshMessage] = useState(false);
     const [inputText, setInputText] = useState("");
     const [isTyping, setIsTyping] = useState(false);
+    const [sessionInfo, setSessionInfo] = useState<SessionInfo>({
+        sessionId: null,
+        lastActivity: new Date(),
+        messageCount: 0,
+        wasRefreshed: false
+    });
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const sessionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const inactivityTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -33,14 +49,167 @@ const ChatPopup = () => {
         scrollToBottom();
     }, [messages]);
 
+    // Session management functions
+    const startNewSession = async () => {
+        try {
+            const response = await fetch('/api/chatbot', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ action: 'start_session' })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setSessionInfo(prev => {
+                    const wasRefreshed = prev.wasRefreshed;
+
+                    // Show refresh message only if session was actually refreshed due to timeout
+                    if (wasRefreshed) {
+                        setShowRefreshMessage(true);
+                        setTimeout(() => setShowRefreshMessage(false), 5000); // Hide after 5 seconds
+                    }
+
+                    return {
+                        ...prev,
+                        sessionId: data.sessionId,
+                        lastActivity: new Date(),
+                        messageCount: 0,
+                        wasRefreshed: false
+                    };
+                });
+            }
+        } catch (error) {
+            console.error('Error starting session:', error);
+        }
+    };
+
+    const endSession = async () => {
+        if (sessionInfo.sessionId) {
+            try {
+                await fetch('/api/chatbot', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'end_session',
+                        sessionId: sessionInfo.sessionId
+                    })
+                });
+            } catch (error) {
+                console.error('Error ending session:', error);
+            }
+        }
+
+        // Reset session info
+        setSessionInfo({
+            sessionId: null,
+            lastActivity: new Date(),
+            messageCount: 0,
+            wasRefreshed: true
+        });
+
+        // Clear timeouts
+        if (sessionTimeoutRef.current) {
+            clearTimeout(sessionTimeoutRef.current);
+        }
+        if (inactivityTimeoutRef.current) {
+            clearTimeout(inactivityTimeoutRef.current);
+        }
+    };
+
+    const resetInactivityTimer = () => {
+        if (inactivityTimeoutRef.current) {
+            clearTimeout(inactivityTimeoutRef.current);
+        }
+
+        // Set inactivity timeout (5 minutes) - runs even when chat is closed
+        inactivityTimeoutRef.current = setTimeout(() => {
+            console.log('Session ended due to inactivity (5 minutes)');
+            endSession();
+        }, 5 * 60 * 1000); // 5 minutes
+    };
+
+    const checkSessionTimeout = () => {
+        const now = new Date();
+        const timeSinceLastActivity = now.getTime() - sessionInfo.lastActivity.getTime();
+        const maxSessionTime = 5 * 60 * 1000; // 5 minutes
+
+        if (timeSinceLastActivity > maxSessionTime) {
+            console.log('Session ended due to timeout (5 minutes)');
+            endSession();
+        }
+    };
+
     useEffect(() => {
         if (isOpen && inputRef.current) {
             inputRef.current.focus();
         }
-    }, [isOpen]);
+
+        // Start session when chat opens for the first time
+        if (isOpen && !sessionInfo.sessionId) {
+            startNewSession();
+        }
+
+        // Don't reset inactivity timer when chat opens - let it continue running
+
+        // Check session timeout every 1 minute only when chat is open
+        let timeoutCheckInterval: NodeJS.Timeout | null = null;
+        if (isOpen) {
+            timeoutCheckInterval = setInterval(checkSessionTimeout, 1 * 60 * 1000);
+        }
+
+        return () => {
+            if (timeoutCheckInterval) {
+                clearInterval(timeoutCheckInterval);
+            }
+        };
+    }, [isOpen, sessionInfo.sessionId]);
+
+    // Separate effect for inactivity timer - runs even when chat is closed
+    useEffect(() => {
+        // Start inactivity timer when session exists
+        if (sessionInfo.sessionId) {
+            resetInactivityTimer();
+        }
+
+        return () => {
+            if (inactivityTimeoutRef.current) {
+                clearTimeout(inactivityTimeoutRef.current);
+            }
+        };
+    }, [sessionInfo.sessionId]);
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (sessionTimeoutRef.current) {
+                clearTimeout(sessionTimeoutRef.current);
+            }
+            if (inactivityTimeoutRef.current) {
+                clearTimeout(inactivityTimeoutRef.current);
+            }
+            // End session when component unmounts
+            if (sessionInfo.sessionId) {
+                endSession();
+            }
+        };
+    }, [sessionInfo.sessionId]);
 
     const handleSendMessage = async () => {
-        if (!inputText.trim()) return;
+        if (!inputText.trim() || isTyping) return;
+
+        // Update session activity
+        setSessionInfo(prev => ({
+            ...prev,
+            lastActivity: new Date(),
+            messageCount: prev.messageCount + 1
+        }));
+
+        // Reset inactivity timer when user actually sends a message
+        resetInactivityTimer();
 
         const userMessage: Message = {
             id: Date.now().toString(),
@@ -53,28 +222,46 @@ const ChatPopup = () => {
         setInputText("");
         setIsTyping(true);
 
-        // Simulate AI response
-        setTimeout(() => {
-            const aiResponses = [
-                "Cảm ơn bạn đã hỏi! Tôi có thể giúp bạn tìm hiểu về các điểm du lịch nổi tiếng, đặt khách sạn, hoặc tư vấn về lịch trình du lịch.",
-                "Đây là một câu hỏi rất hay! Dựa trên kinh nghiệm của tôi, tôi khuyên bạn nên tham khảo các đánh giá từ khách hàng trước khi đưa ra quyết định.",
-                "Tôi hiểu câu hỏi của bạn. Hãy để tôi tìm kiếm thông tin chi tiết nhất cho bạn về vấn đề này.",
-                "Cảm ơn bạn đã quan tâm! Tôi có thể cung cấp thông tin về các khuyến mãi hiện tại, điểm du lịch hot, hoặc tư vấn về thời gian du lịch phù hợp.",
-                "Đây là một lựa chọn tuyệt vời! Tôi có thể giúp bạn lên kế hoạch chi tiết cho chuyến đi của mình."
-            ];
+        try {
+            // Call the Next.js API endpoint which forwards to Flask
+            const response = await fetch('/api/chatbot', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: inputText,
+                    sessionId: sessionInfo.sessionId
+                })
+            });
 
-            const randomResponse = aiResponses[Math.floor(Math.random() * aiResponses.length)];
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
 
             const aiMessage: Message = {
                 id: (Date.now() + 1).toString(),
-                text: randomResponse,
+                text: data.response || data.message || "Xin lỗi, tôi không thể xử lý câu hỏi của bạn ngay lúc này.",
                 isUser: false,
                 timestamp: new Date()
             };
 
             setMessages(prev => [...prev, aiMessage]);
+        } catch (error) {
+
+            const errorMessage: Message = {
+                id: (Date.now() + 1).toString(),
+                text: "Xin lỗi, có lỗi xảy ra khi kết nối với chatbot. Vui lòng thử lại sau.",
+                isUser: false,
+                timestamp: new Date()
+            };
+
+            setMessages(prev => [...prev, errorMessage]);
+        } finally {
             setIsTyping(false);
-        }, 1500);
+        }
     };
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -117,7 +304,7 @@ const ChatPopup = () => {
                         <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-blue-300 to-blue-500 text-white rounded-t-lg">
                             <div className="flex items-center space-x-2">
                                 <FaRobot className="w-5 h-5" />
-                                <span className="font-semibold">AI Du lịch</span>
+                                <span className="font-semibold">AI hỗ trợ thông tin du lịch</span>
                             </div>
                             <button
                                 onClick={() => setIsOpen(false)}
@@ -129,6 +316,20 @@ const ChatPopup = () => {
 
                         {/* Messages */}
                         <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                            {/* Refresh notification */}
+                            {showRefreshMessage && (
+                                <div className="flex justify-center">
+                                    <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-2 rounded-lg text-sm">
+                                        <div className="flex items-center space-x-2">
+                                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+                                            </svg>
+                                            <span>Phiên chat đã được làm mới. Thông tin trước đó đã được xóa.</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {messages.map((message) => (
                                 <div
                                     key={message.id}

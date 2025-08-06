@@ -13,14 +13,14 @@ function slugify(str: string) {
 }
 
 const DESTINATIONS = [
-    'Hồ Chí Minh',
-    'Hà Nội',
-    'Đà Nẵng',
-    'Nha Trang',
-    'Phú Quốc',
-    'Vũng Tàu',
-    'Hạ Long',
-    'Đà Lạt',
+    'Phường Sài Gòn',
+    'Phường Nhiêu Lộc',
+    'Phường Chợ Lớn',
+    'Phường Phú Mỹ',
+    'Phường 22',
+    'Phường Phú Nhuận',
+    'Phường Bảy Hiền',
+    'Phường Thủ Đức',
 ];
 
 export default function DestinationPage({ params }: { params: { destination: string } }) {

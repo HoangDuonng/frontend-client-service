@@ -6,84 +6,60 @@ import { FaMapMarkerAlt } from 'react-icons/fa';
 import Link from 'next/link';
 
 function slugify(str: string) {
-    return str.normalize('NFD')
-        .replace(/\p{Diacritic}/gu, '')
+    return str
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd')
+        .replace(/Đ/g, 'D')
         .replace(/\s+/g, '-')
         .toLowerCase();
+}
+
+function getDistrictImage(name: string) {
+    const slug = slugify(name);
+    return `/images/hotel/${slug}.webp`;
 }
 
 export default function HotelDestinations() {
     const destinations = [
         {
-            name: 'Hồ Chí Minh',
-            hotelCount: 1527,
-            image: '/images/banner/banner-1.webp',
-            isHot: false
-        },
-        {
-            name: 'Đà Nẵng',
-            hotelCount: 763,
-            image: '/images/hero/hero-2.webp',
+            name: 'Phường Sài Gòn',
+            hotelCount: 520,
             isHot: true
         },
         {
-            name: 'Nha Trang',
-            hotelCount: 569,
-            image: '/images/banner/banner-2.webp',
+            name: 'Phường Nhiêu Lộc',
+            hotelCount: 210,
+            isHot: false
+        },
+        {
+            name: 'Phường Chợ Lớn',
+            hotelCount: 180,
+            isHot: false
+        },
+        {
+            name: 'Phường Phú Mỹ',
+            hotelCount: 150,
             isHot: true
         },
         {
-            name: 'Phú Quốc',
-            hotelCount: 381,
-            image: '/images/banner/banner-3.webp',
-            isHot: true
-        },
-        {
-            name: 'Vũng Tàu',
-            hotelCount: 339,
-            image: '/images/hero/hero-1.webp',
+            name: 'Phường 22',
+            hotelCount: 130,
             isHot: false
         },
         {
-            name: 'Hà Nội',
-            hotelCount: 1049,
-            image: '/images/hero/hero-2.webp',
+            name: 'Phường Phú Nhuận',
+            hotelCount: 90,
             isHot: false
         },
         {
-            name: 'Đà Lạt',
-            hotelCount: 591,
-            image: '/images/banner/banner-1.webp',
+            name: 'Phường Bảy Hiền',
+            hotelCount: 110,
             isHot: false
         },
         {
-            name: 'Hội An',
-            hotelCount: 553,
-            image: '/images/banner/banner-2.webp',
-            isHot: false
-        },
-        {
-            name: 'Phan Thiết',
-            hotelCount: 243,
-            image: '/images/banner/banner-3.webp',
-            isHot: false
-        },
-        {
-            name: 'Quy Nhơn',
-            hotelCount: 80,
-            image: '/images/hero/hero-1.webp',
-            isHot: false
-        },
-        {
-            name: 'Huế',
-            hotelCount: 243,
-            image: '/images/hero/hero-2.webp',
-            isHot: false
-        },
-        {
-            name: 'Hạ Long',
-            hotelCount: 230,
-            image: '/images/banner/banner-2.webp',
+            name: 'Phường Thủ Đức',
+            hotelCount: 75,
             isHot: false
         }
     ];
@@ -114,7 +90,7 @@ export default function HotelDestinations() {
                                     {/* Image */}
                                     <div className="relative h-48 w-full">
                                         <Image
-                                            src={destination.image}
+                                            src={getDistrictImage(destination.name)}
                                             alt={destination.name}
                                             fill
                                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"

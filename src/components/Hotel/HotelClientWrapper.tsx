@@ -17,7 +17,8 @@ export default function HotelClientWrapper() {
         <div className="min-h-screen">
             <Header />
             <HotelHero />
-            <div className="w-full max-w-6xl mx-auto -mt-20 mb-10 relative z-10">
+            {/* Đưa search xuống dưới banner */}
+            <div className="w-full max-w-6xl mx-auto mb-10 relative z-10 mt-10">
                 <HotelSearch />
             </div>
             <HotelPromotions />

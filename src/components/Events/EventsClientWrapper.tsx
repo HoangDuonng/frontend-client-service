@@ -48,7 +48,7 @@ export default function EventsClientWrapper() {
             <MonthFilter
                 months={months}
                 selectedMonth={selectedMonth}
-                onSelect={setSelectedMonth}
+                onChange={setSelectedMonth}
             />
             <EventList events={events} />
             <PromotionList promotions={promotions} />

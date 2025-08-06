@@ -18,12 +18,12 @@ export default function Home() {
       <Header />
       <Banner />
       <Hero />
-      <HomeSlider slideLinks={["/tour/tour01", "/tour/tour02", "/tour/tour03"]} />
+      <HomeSlider/>
       <Experiences />
       <Events />
       <TravelInfo />
-      <Share />
-      <Partners />
+      {/* <Share />
+      <Partners /> */}
       <Footer />
       <BackToTop />
       <ChatPopup />

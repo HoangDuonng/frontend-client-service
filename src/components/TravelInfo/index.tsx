@@ -60,31 +60,6 @@ export default function TravelInfo() {
                         </div>
                     ))}
                 </div>
-
-                {/* Quick Links */}
-                <div className="mt-16 bg-white rounded-lg shadow-md p-8">
-                    <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-                        Liên kết nhanh
-                    </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <a href="#" className="text-center p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                            <div className="text-2xl mb-2">📅</div>
-                            <div className="font-medium">Lịch sự kiện</div>
-                        </a>
-                        <a href="#" className="text-center p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                            <div className="text-2xl mb-2">🗺️</div>
-                            <div className="font-medium">Bản đồ</div>
-                        </a>
-                        <a href="#" className="text-center p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                            <div className="text-2xl mb-2">📞</div>
-                            <div className="font-medium">Liên hệ</div>
-                        </a>
-                        <a href="#" className="text-center p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                            <div className="text-2xl mb-2">❓</div>
-                            <div className="font-medium">FAQ</div>
-                        </a>
-                    </div>
-                </div>
             </div>
         </section>
     );
