@@ -1,0 +1,123 @@
+/* Component Sizing Configuration */
+
+/* Header Styles */
+.header-large {
+    min-height: 5rem;
+    /* 80px */
+}
+
+.header-medium {
+    min-height: 4rem;
+    /* 64px */
+}
+
+.header-small {
+    min-height: 3rem;
+    /* 48px */
+}
+
+/* Footer Styles */
+.footer-large {
+    min-height: 6rem;
+    /* 96px */
+    padding: 2rem 0;
+}
+
+.footer-medium {
+    min-height: 4rem;
+    /* 64px */
+    padding: 1.5rem 0;
+}
+
+.footer-small {
+    min-height: 3rem;
+    /* 48px */
+    padding: 1rem 0;
+}
+
+/* Container Sizes */
+.container-large {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.container-medium {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+}
+
+.container-small {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+/* Logo Sizes */
+.logo-large {
+    height: 3rem;
+    /* 48px */
+    width: auto;
+}
+
+.logo-medium {
+    height: 2.5rem;
+    /* 40px */
+    width: auto;
+}
+
+.logo-small {
+    height: 2rem;
+    /* 32px */
+    width: auto;
+}
+
+/* Navigation Text Sizes */
+.nav-text-large {
+    font-size: 1.125rem;
+    /* 18px */
+    font-weight: 500;
+}
+
+.nav-text-medium {
+    font-size: 1rem;
+    /* 16px */
+    font-weight: 400;
+}
+
+.nav-text-small {
+    font-size: 0.875rem;
+    /* 14px */
+    font-weight: 400;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 768px) {
+    .header-large {
+        min-height: 4rem;
+        /* 64px */
+    }
+
+    .logo-large {
+        height: 2.5rem;
+        /* 40px */
+    }
+
+    .nav-text-large {
+        font-size: 1rem;
+        /* 16px */
+    }
+}
+
+@media (max-width: 480px) {
+    .header-large {
+        min-height: 3.5rem;
+        /* 56px */
+    }
+
+    .logo-large {
+        height: 2rem;
+        /* 32px */
+    }
+}
