@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   reactStrictMode: true,
   swcMinify: true,
   images: {
@@ -12,14 +13,6 @@ const nextConfig = {
       },
     ],
     // Nếu dùng Next < 13.4, dùng domains: ['localhost'] thay cho remotePatterns
-  },
-  async rewrites() {
-    return [
-      {
-        source: '/tour/plugins/:path*',
-        destination: `${process.env.NEXT_PUBLIC_TOUR_PLUGIN_DOMAIN}/:path*`,
-      },
-    ];
   },
 };
 
