@@ -1,5 +1,7 @@
 const API_FILE_URL = process.env.NEXT_PUBLIC_API_FILE_URL;
 
+export const dynamic = 'force-dynamic';
+
 if (!API_FILE_URL) {
   throw new Error('NEXT_PUBLIC_API_FILE_URL is not defined in .env.local');
 }
